@@ -15,8 +15,8 @@
 /hello-*
 
 # Agent conversation files
-.Pair/
-
+/.Pair/
+/.trae/
 # Go
 *.test
 *.out
