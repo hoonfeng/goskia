@@ -1,0 +1,22 @@
+# Fetched native libraries (regenerate with: go run ./cmd/goskia fetch)
+# /skia/lib/   ← 已启用提交，供 CGO 编译依赖
+# /skia/libSkiaSharp.*  ← 已启用提交
+
+# Download cache for nupkgs
+/.cache/
+
+# Build outputs
+/bin/
+/dist/
+
+# Generated example outputs (committed copies live under docs/)
+/*.png
+/*.pdf
+/hello-*
+
+# Agent conversation files
+.Pair/
+
+# Go
+*.test
+*.out
