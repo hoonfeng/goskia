@@ -118,6 +118,32 @@ func (img *Image) Encode(format EncodedFormat, quality int) ([]byte, error) {
 	return out, err
 }
 
+// ReadPixels reads the image's pixel data into a byte slice (RGBA premultiplied,
+// 4 bytes per pixel, row-major order, no padding). Returns nil on failure.
+// This is significantly faster than Encode+Decode because it avoids compression.
+func (img *Image) ReadPixels() ([]byte, error) {
+	w := int(C.sk_image_get_width(img.ptr))
+	h := int(C.sk_image_get_height(img.ptr))
+	if w <= 0 || h <= 0 {
+		return nil, fmt.Errorf("skia: ReadPixels: invalid dimensions %dx%d", w, h)
+	}
+	info := NewImageInfo(w, h, ColorTypeRGBA8888, AlphaTypePremul)
+	rowBytes := info.MinRowBytes()
+	size := rowBytes * h
+	buf := C.malloc(C.size_t(size))
+	if buf == nil {
+		return nil, fmt.Errorf("skia: ReadPixels: out of memory allocating %d bytes", size)
+	}
+	defer C.free(buf)
+	ci := info.c()
+	if !bool(C.sk_image_read_pixels(img.ptr, &ci, buf, C.size_t(rowBytes), 0, 0, C.DISALLOW_SK_IMAGE_CACHING_HINT)) {
+		runtime.KeepAlive(img)
+		return nil, fmt.Errorf("skia: ReadPixels: failed to read pixels from image")
+	}
+	runtime.KeepAlive(img)
+	return C.GoBytes(buf, C.int(size)), nil
+}
+
 func (img *Image) release() {
 	if img != nil && img.ptr != nil {
 		C.sk_image_unref(img.ptr)

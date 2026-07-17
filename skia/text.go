@@ -105,8 +105,39 @@ func (f *Font) SetSize(size float32) { C.sk_font_set_size(f.ptr, C.float(size));
 // Size returns the text size in pixels.
 func (f *Font) Size() float32 { s := float32(C.sk_font_get_size(f.ptr)); runtime.KeepAlive(f); return s }
 
+// UnicharToGlyph returns the glyph id the font's typeface maps the Unicode
+// codepoint to, or 0 when it has no glyph for that codepoint.
+func (f *Font) UnicharToGlyph(r rune) uint16 {
+	tp := C.sk_font_get_typeface(f.ptr)
+	if tp == nil {
+		return 0
+	}
+	g := C.sk_typeface_unichar_to_glyph(tp, C.int32_t(r))
+	runtime.KeepAlive(f)
+	return uint16(g)
+}
+
 // SetEdging sets glyph edge antialiasing.
 func (f *Font) SetEdging(e FontEdging) { C.sk_font_set_edging(f.ptr, C.sk_font_edging_t(e)); runtime.KeepAlive(f) }
+
+// SetSkewX sets the font's horizontal skew factor (for synthetic italic).
+func (f *Font) SetSkewX(skewX float32) {
+	C.sk_font_set_skew_x(f.ptr, C.float(skewX))
+	runtime.KeepAlive(f)
+}
+
+// SetEmbolden enables synthetic bold (fake bold) by making strokes thicker.
+func (f *Font) SetEmbolden(value bool) {
+	C.sk_font_set_embolden(f.ptr, C.bool(value))
+	runtime.KeepAlive(f)
+}
+
+// IsEmbolden returns whether synthetic bold is enabled.
+func (f *Font) IsEmbolden() bool {
+	v := C.sk_font_is_embolden(f.ptr)
+	runtime.KeepAlive(f)
+	return bool(v)
+}
 
 // SetHinting sets the glyph hinting level.
 func (f *Font) SetHinting(h FontHinting) { C.sk_font_set_hinting(f.ptr, C.sk_font_hinting_t(h)); runtime.KeepAlive(f) }
