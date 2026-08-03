@@ -188,6 +188,10 @@ type ClipOp int32
 const (
 	ClipOpDifference ClipOp = C.DIFFERENCE_SK_CLIPOP
 	ClipOpIntersect  ClipOp = C.INTERSECT_SK_CLIPOP
+	// ClipOpReplace replaces the current clip with the given region
+	// (SkClipOp::kReplace). Used to reset an inherited ancestor clip when
+	// painting fixed-position layers against the viewport.
+	ClipOpReplace ClipOp = C.REPLACE_SK_CLIPOP
 )
 
 // TextEncoding describes how text bytes map to glyphs.

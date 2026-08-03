@@ -453,8 +453,11 @@ typedef enum {
 } sk_region_op_t;
 
 typedef enum {
-    DIFFERENCE_SK_CLIPOP,
-    INTERSECT_SK_CLIPOP,
+    DIFFERENCE_SK_CLIPOP = 0,
+    INTERSECT_SK_CLIPOP = 1,
+    // Explicit value matches SkClipOp::kReplace (5) — the C enum values are
+    // cast straight to SkClipOp, so keeping them aligned matters.
+    REPLACE_SK_CLIPOP = 5,
 } sk_clipop_t;
 
 /**
