@@ -254,3 +254,13 @@ func (c *Canvas) ClipPath(path *Path, op ClipOp, doAA bool) {
 	runtime.KeepAlive(c)
 	runtime.KeepAlive(path)
 }
+
+// ClipRRect intersects (or otherwise combines) the clip with a rounded
+// rectangle. This is Skia's native rounded-rect clip — the GPU backend
+// handles RRects analytically in its clip stack (no stencil buffer, no path
+// tessellation), which is more reliable than ClipPath for rounded corners.
+func (c *Canvas) ClipRRect(rr *RRect, op ClipOp, doAA bool) {
+	C.sk_canvas_clip_rrect_with_operation(c.ptr, rr.ptr, C.sk_clipop_t(op), C.bool(doAA))
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(rr)
+}
