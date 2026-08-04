@@ -3,7 +3,22 @@ package skia
 // #include "goskia.h"
 import "C"
 
-import "runtime"
+import (
+	"log"
+	"os"
+	"runtime"
+)
+
+// drawDebug is a cheap toggled flag for the SKIA_DRAW_DEBUG environment
+// variable: when set, every canvas draw/clip/translate call prints its
+// coordinates so a scroll/paint pipeline can be audited at the skia level.
+var drawDebug = os.Getenv("SKIA_DRAW_DEBUG") != ""
+
+func drawLogf(format string, args ...any) {
+	if drawDebug {
+		log.Printf(format, args...)
+	}
+}
 
 // Canvas provides the drawing surface API: shapes, images, text, plus a
 // matrix/clip stack. A Canvas obtained from a Surface is owned by that surface.
@@ -33,6 +48,7 @@ func (c *Canvas) DrawPaint(p *Paint) {
 
 // DrawRect draws a rectangle.
 func (c *Canvas) DrawRect(r Rect, p *Paint) {
+	drawLogf("[skia] DrawRect (%.1f,%.1f %.1fx%.1f)", r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top)
 	cr := r.c()
 	C.sk_canvas_draw_rect(c.ptr, &cr, paintPtr(p))
 	runtime.KeepAlive(c)
@@ -56,6 +72,7 @@ func (c *Canvas) DrawCircle(cx, cy, radius float32, p *Paint) {
 
 // DrawRoundRect draws a rectangle with rounded corners of radii (rx, ry).
 func (c *Canvas) DrawRoundRect(r Rect, rx, ry float32, p *Paint) {
+	drawLogf("[skia] DrawRRect (%.1f,%.1f %.1fx%.1f) r=(%.1f,%.1f)", r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, rx, ry)
 	cr := r.c()
 	C.sk_canvas_draw_round_rect(c.ptr, &cr, C.float(rx), C.float(ry), paintPtr(p))
 	runtime.KeepAlive(c)
@@ -102,6 +119,7 @@ func (c *Canvas) DrawPoints(mode PointMode, pts []Point, p *Paint) {
 
 // DrawImage draws img with its top-left at (x, y).
 func (c *Canvas) DrawImage(img *Image, x, y float32, sampling SamplingOptions, p *Paint) {
+	drawLogf("[skia] DrawImage (%.1f,%.1f)", x, y)
 	cs := sampling.c()
 	C.sk_canvas_draw_image(c.ptr, img.ptr, C.float(x), C.float(y), &cs, paintPtr(p))
 	runtime.KeepAlive(c)
@@ -111,6 +129,8 @@ func (c *Canvas) DrawImage(img *Image, x, y float32, sampling SamplingOptions, p
 
 // DrawImageRect draws the src rectangle of img into the dst rectangle.
 func (c *Canvas) DrawImageRect(img *Image, src, dst Rect, sampling SamplingOptions, p *Paint) {
+	drawLogf("[skia] DrawImageRect (%.1f,%.1f %.1fx%.1f) <- (%.1f,%.1f %.1fx%.1f)",
+		dst.Left, dst.Top, dst.Right-dst.Left, dst.Bottom-dst.Top, src.Left, src.Top, src.Right-src.Left, src.Bottom-src.Top)
 	csrc, cdst, cs := src.c(), dst.c(), sampling.c()
 	C.sk_canvas_draw_image_rect(c.ptr, img.ptr, &csrc, &cdst, &cs, paintPtr(p))
 	runtime.KeepAlive(c)
@@ -121,6 +141,7 @@ func (c *Canvas) DrawImageRect(img *Image, src, dst Rect, sampling SamplingOptio
 // Save pushes the current matrix and clip onto the save stack and returns the
 // stack depth that RestoreToCount can target.
 func (c *Canvas) Save() int {
+	drawLogf("[skia] Save depth=%d", c.SaveCount())
 	n := int(C.sk_canvas_save(c.ptr))
 	runtime.KeepAlive(c)
 	return n
@@ -142,6 +163,7 @@ func (c *Canvas) SaveLayer(bounds *Rect, p *Paint) int {
 
 // Restore pops the most recent save.
 func (c *Canvas) Restore() {
+	drawLogf("[skia] Restore depth=%d", c.SaveCount())
 	C.sk_canvas_restore(c.ptr)
 	runtime.KeepAlive(c)
 }
@@ -161,6 +183,7 @@ func (c *Canvas) SaveCount() int {
 
 // Translate post-translates the current matrix.
 func (c *Canvas) Translate(dx, dy float32) {
+	drawLogf("[skia] Translate (%.1f,%.1f)", dx, dy)
 	C.sk_canvas_translate(c.ptr, C.float(dx), C.float(dy))
 	runtime.KeepAlive(c)
 }
@@ -219,6 +242,7 @@ func (c *Canvas) GetMatrix() Matrix {
 
 // ClipRect intersects (or otherwise combines) the clip with r.
 func (c *Canvas) ClipRect(r Rect, op ClipOp, doAA bool) {
+	drawLogf("[skia] ClipRect (%.1f,%.1f %.1fx%.1f) op=%d", r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, op)
 	cr := r.c()
 	C.sk_canvas_clip_rect_with_operation(c.ptr, &cr, C.sk_clipop_t(op), C.bool(doAA))
 	runtime.KeepAlive(c)

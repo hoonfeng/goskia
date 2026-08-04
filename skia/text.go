@@ -103,7 +103,11 @@ func NewFont(tf *Typeface, size float32) *Font {
 func (f *Font) SetSize(size float32) { C.sk_font_set_size(f.ptr, C.float(size)); runtime.KeepAlive(f) }
 
 // Size returns the text size in pixels.
-func (f *Font) Size() float32 { s := float32(C.sk_font_get_size(f.ptr)); runtime.KeepAlive(f); return s }
+func (f *Font) Size() float32 {
+	s := float32(C.sk_font_get_size(f.ptr))
+	runtime.KeepAlive(f)
+	return s
+}
 
 // UnicharToGlyph returns the glyph id the font's typeface maps the Unicode
 // codepoint to, or 0 when it has no glyph for that codepoint.
@@ -118,7 +122,10 @@ func (f *Font) UnicharToGlyph(r rune) uint16 {
 }
 
 // SetEdging sets glyph edge antialiasing.
-func (f *Font) SetEdging(e FontEdging) { C.sk_font_set_edging(f.ptr, C.sk_font_edging_t(e)); runtime.KeepAlive(f) }
+func (f *Font) SetEdging(e FontEdging) {
+	C.sk_font_set_edging(f.ptr, C.sk_font_edging_t(e))
+	runtime.KeepAlive(f)
+}
 
 // SetSkewX sets the font's horizontal skew factor (for synthetic italic).
 func (f *Font) SetSkewX(skewX float32) {
@@ -140,7 +147,10 @@ func (f *Font) IsEmbolden() bool {
 }
 
 // SetHinting sets the glyph hinting level.
-func (f *Font) SetHinting(h FontHinting) { C.sk_font_set_hinting(f.ptr, C.sk_font_hinting_t(h)); runtime.KeepAlive(f) }
+func (f *Font) SetHinting(h FontHinting) {
+	C.sk_font_set_hinting(f.ptr, C.sk_font_hinting_t(h))
+	runtime.KeepAlive(f)
+}
 
 // SetSubpixel enables sub-pixel glyph positioning.
 func (f *Font) SetSubpixel(v bool) { C.sk_font_set_subpixel(f.ptr, C.bool(v)); runtime.KeepAlive(f) }
@@ -210,6 +220,7 @@ func (c *Canvas) DrawText(text string, x, y float32, font *Font, paint *Paint) {
 	if text == "" || font == nil {
 		return
 	}
+	drawLogf("[skia] DrawText n=%d (%.1f,%.1f) %q", len(text), x, y, clipText(text, 24))
 	b := []byte(text)
 	C.sk_canvas_draw_simple_text(c.ptr, unsafe.Pointer(&b[0]), C.size_t(len(b)),
 		C.sk_text_encoding_t(C.UTF8_SK_TEXT_ENCODING), C.float(x), C.float(y), font.ptr, paintPtr(paint))
@@ -217,4 +228,11 @@ func (c *Canvas) DrawText(text string, x, y float32, font *Font, paint *Paint) {
 	runtime.KeepAlive(font)
 	runtime.KeepAlive(paint)
 	runtime.KeepAlive(b)
+}
+
+func clipText(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
