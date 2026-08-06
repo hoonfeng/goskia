@@ -181,6 +181,17 @@ func (c *Canvas) SaveCount() int {
 	return n
 }
 
+// GetDeviceClipBounds returns the current clip bounds in device space
+// (physical pixels, after the CTM). ok is false when the clip is empty.
+func (c *Canvas) GetDeviceClipBounds() (left, top, right, bottom int32, ok bool) {
+	var b C.sk_irect_t
+	if !bool(C.sk_canvas_get_device_clip_bounds(c.ptr, &b)) {
+		return 0, 0, 0, 0, false
+	}
+	runtime.KeepAlive(c)
+	return int32(b.left), int32(b.top), int32(b.right), int32(b.bottom), true
+}
+
 // Translate post-translates the current matrix.
 func (c *Canvas) Translate(dx, dy float32) {
 	drawLogf("[skia] Translate (%.1f,%.1f)", dx, dy)
