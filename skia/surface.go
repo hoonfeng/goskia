@@ -40,6 +40,12 @@ func NewRasterSurfaceN32Premul(width, height int) (*Surface, error) {
 	return NewRasterSurface(ImageInfoN32Premul(width, height))
 }
 
+// IsValid reports whether the underlying sk_surface_t is non-nil. A Surface
+// wrapper whose C pointer is nil (e.g. read across a resize race before the
+// new surface is created) must not be used for drawing — callers check this
+// before Canvas()/Snapshot() to avoid a cgo crash (sk_surface_get_canvas(0x0)).
+func (s *Surface) IsValid() bool { return s != nil && s.ptr != nil }
+
 // Width returns the surface width in pixels.
 func (s *Surface) Width() int { return s.info.Width }
 
