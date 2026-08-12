@@ -152,5 +152,29 @@ func (img *Image) release() {
 	}
 }
 
+// MakeShader returns a shader that samples this image as a source of colors.
+// tileX/tileY control how the image is tiled when the drawn area exceeds the
+// image bounds. sampling selects the resampling filter (nil = default linear);
+// localMatrix, if non-nil, transforms the image's coordinates.
+//
+// This is the primitive needed to implement CSS mask-image: the image's alpha
+// channel can be used as a mask by drawing it with BlendModeDstIn inside a
+// SaveLayer.
+func (img *Image) MakeShader(tileX, tileY TileMode, sampling *SamplingOptions, localMatrix *Matrix) *Shader {
+	var cSampling *C.sk_sampling_options_t
+	if sampling != nil {
+		s := sampling.c()
+		cSampling = &s
+	}
+	var cMatrix *C.sk_matrix_t
+	if localMatrix != nil {
+		m := localMatrix.c()
+		cMatrix = &m
+	}
+	sh := C.sk_image_make_shader(img.ptr, C.sk_shader_tilemode_t(tileX), C.sk_shader_tilemode_t(tileY), cSampling, cMatrix)
+	runtime.KeepAlive(img)
+	return newShader(sh)
+}
+
 // Release frees this reference to the image. It is safe to call multiple times.
 func (img *Image) Release() { img.release() }
