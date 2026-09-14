@@ -275,3 +275,18 @@ func (c *Canvas) ClipRRect(rr *RRect, op ClipOp, doAA bool) {
 	runtime.KeepAlive(c)
 	runtime.KeepAlive(rr)
 }
+
+// DrawVertices 绘制顶点网格（Skia drawVertices）：模式 + 顶点色与
+// shader/paint 的混合模式 + paint（paint 携带图像 shader 与 alpha）。
+// Live2D 渲染用它一次批量绘制一个 drawable 的全部三角形——替代逐
+// 三角形 clip+drawImage，绘制调用从 4 千次/帧降到几十次/帧。
+func (c *Canvas) DrawVertices(v *Vertices, blend BlendMode, p *Paint) {
+	if v == nil || v.ptr == nil || p == nil {
+		return
+	}
+	drawLogf("[skia] DrawVertices vtx=%p", v.ptr)
+	C.sk_canvas_draw_vertices(c.ptr, v.ptr, C.sk_blendmode_t(blend), paintPtr(p))
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(v)
+	runtime.KeepAlive(p)
+}

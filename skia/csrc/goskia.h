@@ -39,6 +39,7 @@
 #include "include/c/sk_codec.h"
 #include "include/c/sk_document.h"
 #include "include/c/sk_runtimeeffect.h"
+#include "include/c/sk_vertices.h"
 #include "include/c/gr_context.h"
 
 #endif /* GOSKIA_H */
