@@ -83,6 +83,30 @@ func (t *Typeface) UnicharToGlyph(r rune) uint16 {
 	return uint16(g)
 }
 
+// Weight returns the typeface's actual weight (e.g. 400 regular, 700 bold)
+// as reported by Skia's style query. Works for Typefaces obtained via
+// NewTypeface (platform font lookup), which may not be registered in any
+// application-level font collection. Returns 0 when unknown.
+func (t *Typeface) Weight() int {
+	if t == nil || t.ptr == nil {
+		return 0
+	}
+	w := C.sk_typeface_get_font_weight(t.ptr)
+	runtime.KeepAlive(t)
+	return int(w)
+}
+
+// Slant returns the typeface's slant (upright / italic / oblique), as
+// reported by Skia. Works for platform-lookup Typefaces (see Weight).
+func (t *Typeface) Slant() FontSlant {
+	if t == nil || t.ptr == nil {
+		return FontSlantUpright
+	}
+	s := C.sk_typeface_get_font_slant(t.ptr)
+	runtime.KeepAlive(t)
+	return FontSlant(s)
+}
+
 // Font is a typeface combined with size and other rendering parameters.
 type Font struct{ ptr *C.sk_font_t }
 
