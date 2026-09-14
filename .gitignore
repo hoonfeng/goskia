@@ -17,6 +17,11 @@
 # Agent conversation files
 /.Pair/
 /.trae/
+
+# Build artifacts (root-level) / IDE state
+/*.exe
+/.reasonix/
+
 # Go
 *.test
 *.out
