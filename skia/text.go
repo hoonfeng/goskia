@@ -206,6 +206,19 @@ type FontMetrics struct {
 	Leading   float32 // 行间额外间距
 	CapHeight float32 // 大写字母高度
 	XHeight   float32 // 小写 x 高度
+	// ── 水平度量（sk_fontmetrics_t 的 fAvgCharWidth / fMaxCharWidth / fXMin / fXMax）──
+	// WebKit/Blink 的表单控件固有内容宽就由这两个量决定：
+	//   <input size=N> 内容宽 = ceil(AvgCharWidth × N) + (MaxCharWidth − AvgCharWidth)
+	// 见 WebCore/rendering/RenderTextControlSingleLine.cpp 的
+	// preferredContentLogicalWidth()：它取 primaryFont().avgCharWidth() 与
+	// maxCharWidth()，后者在 Skia 平台是 round(fXMax − fXMin)
+	// （platform/graphics/skia/FontSkia.cpp 的 initCharWidths()）。
+	// Windows 上 fAvgCharWidth 来自 GDI TEXTMETRIC.tmAveCharWidth（SkFontHost_win.cpp），
+	// 字体缺值时 Skia 保持 0，调用方须按 WebKit hasValidAverageCharWidth() 的语义回退。
+	AvgCharWidth float32 // 平均字符宽（px）
+	MaxCharWidth float32 // 最大字符宽（px）
+	XMin         float32 // 字形最小左边界（px，可为负）
+	XMax         float32 // 字形最大右边界（px）
 }
 
 // Metrics returns the font's real vertical metrics (from Skia sk_font_get_metrics)
@@ -222,6 +235,10 @@ func (f *Font) Metrics() (m FontMetrics, lineSpacing float32) {
 		Leading:   float32(cm.fLeading),
 		CapHeight: float32(cm.fCapHeight),
 		XHeight:   float32(cm.fXHeight),
+		AvgCharWidth: float32(cm.fAvgCharWidth),
+		MaxCharWidth: float32(cm.fMaxCharWidth),
+		XMin:         float32(cm.fXMin),
+		XMax:         float32(cm.fXMax),
 	}, float32(ls)
 }
 
