@@ -184,13 +184,15 @@ func (f *Font) MeasureText(text string, paint *Paint) (width float32, bounds Rec
 	if text == "" {
 		return 0, Rect{}
 	}
-	b := []byte(text)
 	var cb C.sk_rect_t
-	w := C.sk_font_measure_text(f.ptr, unsafe.Pointer(&b[0]), C.size_t(len(b)),
+	// 零拷贝：把 string 的底层字节直接交给 Skia（unsafe.StringData）。旧实现
+	// b := []byte(text) 每次测量多一次分配+复制 —— 布局阶段每段文本都要测宽，
+	// 一帧上万次调用，纯 Go 侧浪费。text 由 KeepAlive 保证存活。
+	w := C.sk_font_measure_text(f.ptr, unsafe.Pointer(unsafe.StringData(text)), C.size_t(len(text)),
 		C.sk_text_encoding_t(C.UTF8_SK_TEXT_ENCODING), &cb, paintPtr(paint))
 	runtime.KeepAlive(f)
-	runtime.KeepAlive(b)
 	runtime.KeepAlive(paint)
+	runtime.KeepAlive(text)
 	return float32(w), rectFromC(cb)
 }
 
@@ -261,14 +263,19 @@ func (c *Canvas) DrawText(text string, x, y float32, font *Font, paint *Paint) {
 	if text == "" || font == nil {
 		return
 	}
-	drawLogf("[skia] DrawText n=%d (%.1f,%.1f) %q", len(text), x, y, clipText(text, 24))
-	b := []byte(text)
-	C.sk_canvas_draw_simple_text(c.ptr, unsafe.Pointer(&b[0]), C.size_t(len(b)),
+	if drawDebug {
+		// 参数求值本身有成本（clipText 会切片分配、args 逃逸成 []any），
+		// 关闭调试时必须整段跳过 —— 否则每绘制一次就多一次分配。
+		drawLogf("[skia] DrawText n=%d (%.1f,%.1f) %q", len(text), x, y, clipText(text, 24))
+	}
+	// 零拷贝（同 MeasureText）：一个 IDE 页面一帧上万次 DrawText，每次
+	// []byte(text) 都是无谓的分配+复制。
+	C.sk_canvas_draw_simple_text(c.ptr, unsafe.Pointer(unsafe.StringData(text)), C.size_t(len(text)),
 		C.sk_text_encoding_t(C.UTF8_SK_TEXT_ENCODING), C.float(x), C.float(y), font.ptr, paintPtr(paint))
 	runtime.KeepAlive(c)
 	runtime.KeepAlive(font)
 	runtime.KeepAlive(paint)
-	runtime.KeepAlive(b)
+	runtime.KeepAlive(text)
 }
 
 func clipText(s string, n int) string {
